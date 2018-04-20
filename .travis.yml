@@ -1,0 +1,55 @@
+# After changing this file, check it on:
+#   http://lint.travis-ci.org/
+
+language: python
+
+# Run jobs on container-based infrastructure, can be overridden per job
+sudo: false
+
+python: # what python are you supporting?
+    - 3.5
+    - 3.6
+
+before_install:
+  - uname -a
+  - free -m
+  - df -h
+  - ulimit -a
+
+install:
+    # Pull down a miniconda
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+
+    # Build out the environment
+  - hash -r
+    # set to always say yes to conda install
+  - conda config --set always_yes yes --set changeps1 no
+    # makes installs a little more quiet so you get less output
+  - conda update -q conda
+  - conda info -a
+    # creates environment for the given python version
+  - conda create -q -n test python=$TRAVIS_PYTHON_VERSION numpy pytest 
+  - source activate test 
+
+    # Install anything not in conda
+  - pip install codecov
+  - pip install pytest-cov
+  - conda list
+
+before_script:
+  - python -V
+  - python -c 'import numpy; print(numpy.version.version)'
+  - pip install -e .
+
+script:
+  # Make sure the --cov variable is the name of the current package
+  - py.test -v -s --cov
+
+notifications:
+  email: false
+
+after_success:
+  - codecov
+
