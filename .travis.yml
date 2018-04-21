@@ -34,8 +34,6 @@ install:
   - source activate test 
 
     # Install anything not in conda
-  - pip install codecov
-  - pip install pytest-cov
   - conda list
 
 before_script:
@@ -45,11 +43,8 @@ before_script:
 
 script:
   # Make sure the --cov variable is the name of the current package
-  - py.test -v -s --cov
+  - py.test -v -s
 
 notifications:
   email: false
-
-after_success:
-  - codecov
 
