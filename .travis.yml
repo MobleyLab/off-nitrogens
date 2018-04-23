@@ -31,7 +31,8 @@ install:
   - conda info -a
     # creates environment for the given python version
   - conda create -q -n test python=$TRAVIS_PYTHON_VERSION numpy pytest 
-  - source activate test 
+  - source activate test
+  - conda install -c openeye openeye-toolkits
 
     # Install anything not in conda
   - conda list
