@@ -1,4 +1,5 @@
-from off_nitrogens import calc_improper
+from off_nitrogens.calc_improper import *
+import numpy as np
 
 def test_two_vectors():
     """Test the angle between two simple vectors."""
