@@ -77,4 +77,4 @@ def test_oemol_nhfcl():
     atom1, atom0, atom2, atom3 = find_improper_angles(mol)[0]
     ang = calc_improper_angle(atom1, atom0, atom2, atom3)
     if abs(ang-15.0) > 0.1:
-        raise Exception("Error calculating improper of test OEMol. Calculated {} degrees, but should be 15 degrees.".format(ang))
+        raise Exception("Error calculating improper angle in test OEMol system.")
