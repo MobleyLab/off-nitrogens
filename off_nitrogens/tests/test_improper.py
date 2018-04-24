@@ -50,3 +50,31 @@ def test_atom_order():
     if abs(ang1-116.56) > 0.01 or abs(ang2-116.56) > 0.01:
         raise Exception("Changing order of outer atom specification (while maintaining handedness) gives wrong result.")
 
+def test_atom_order():
+    """Test coordinates for test OEMol NHFCl."""
+
+    import openeye.oechem as oechem
+    import openeye.oeomega as oeomega
+    # coordinates for N, F, H, Cl respectively
+    coordlist = [ 0.155,  -0.088,  -0.496,
+                 -1.054,  -0.776,  -0.340,
+                 -0.025,   0.906,  -0.516,
+                  1.689,  -0.635,  -1.263]
+    # create OEMol
+    mol = oechem.OEMol()
+    oechem.OESmilesToMol(mol, 'FNCl')
+    omega = oeomega.OEOmega()
+    omega.SetIncludeInput(False)
+    omega.SetStrictStereo(False)
+    status = omega(mol)
+    oechem.OETriposAtomTypes(mol)
+    oechem.OETriposAtomNames(mol)
+    oechem.OEAddExplicitHydrogens(mol)
+    omega.SetMaxConfs(1)
+    # set provided coordinates
+    mol.SetCoords(oechem.OEFloatArray(coordlist))
+    # calculate and check improper angle
+    atom1, atom0, atom2, atom3 = find_improper_angles(mol)[0]
+    ang = calc_improper_angle(atom1, atom0, atom2, atom3)
+    if abs(ang-15.0) > 0.1:
+        raise Exception("Error calculating improper angle in test OEMol system.")
