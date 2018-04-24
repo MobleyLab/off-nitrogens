@@ -50,7 +50,7 @@ def test_atom_order():
     if abs(ang1-116.56) > 0.01 or abs(ang2-116.56) > 0.01:
         raise Exception("Changing order of outer atom specification (while maintaining handedness) gives wrong result.")
 
-def test_atom_order():
+def test_oemol_nhfcl():
     """Test coordinates for test OEMol NHFCl."""
 
     import openeye.oechem as oechem
