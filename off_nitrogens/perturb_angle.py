@@ -11,7 +11,7 @@ Perturb geometry around an improper dihedral angle. The options are:
  1. Change valence angle without changing improper
  2. Change improper angle without changing valence angles
 
-For use in generating geometries to parameterize valence and improper angles
+For use in generating geometries to parameterize valence and improper angles for an oemol
 
 By: Victoria Lim and Jessica Maat
 
@@ -24,13 +24,17 @@ By: Victoria Lim and Jessica Maat
 import numpy as np
 import math
 import sys
+from openeye import oeomega
+from openeye import oechem
+from calc_improper import *
+#from off_nitrogens.calc_improper import *
 
-#from calc_improper import *
-from off_nitrogens.calc_improper import *
 
 #=============================================================================================
 # PRIVATE SUBROUTINES
 #=============================================================================================
+
+
 
 def rotation_matrix(axis, theta):
     """
@@ -55,7 +59,6 @@ def rotation_matrix(axis, theta):
     """
     axis = np.asarray(axis)
     theta = np.radians(theta)
-
     axis = axis/math.sqrt(np.dot(axis, axis))
     a = math.cos(theta/2.0)
     b, c, d = -axis*math.sin(theta/2.0)
@@ -64,6 +67,10 @@ def rotation_matrix(axis, theta):
     return np.array([[aa+bb-cc-dd, 2*(bc+ad), 2*(bd-ac)],
                      [2*(bc-ad), aa+cc-bb-dd, 2*(cd+ab)],
                      [2*(bd+ac), 2*(cd-ab), aa+dd-bb-cc]])
+
+
+
+
 
 def perturb_valence(atom0, atom1, atom2, atom3, theta, verbose=False):
     """
@@ -93,107 +100,226 @@ def perturb_valence(atom0, atom1, atom2, atom3, theta, verbose=False):
     rot_mat : numpy array
         three-dimension rotation matrix, returned so that the same
         matrix can be applied to any atoms attached to atom3.
-
     """
 
     # outer atoms are atom1 atom2 atom3. get normal vector to that plane.
-    v1 = atom2-atom1
-    v2 = atom2 - atom3
+    v1 = np.asarray(atom2)-np.asarray(atom1)
+    v2 = np.asarray(atom2) - np.asarray(atom3)
     w2 = np.cross(v1, v2)
     # calculate rotation matrix
     rot_mat = rotation_matrix(w2, theta)
+    length = np.linalg.norm(atom0-atom3)
     atom3_rot = np.dot(rot_mat, atom3)
-    # print details of geometry
-    if verbose:
-        print("\n>>> Perturbing valence while maintaining improper angle...")
-        # atom being moved is atom3.
-        print("\natom0 original coords:\t",atom0)
-        print("atom1 original coords:\t",atom1)
-        print("atom2 original coords:\t",atom2)
-        print("atom3 original coords:\t",atom3)
-        print("atom3 {:.2f} deg rotated: {}".format(60.,atom3_rot))
-
-        # check improper but make sure the central is first and moved is last
-        print("\nImproper angle, before: ", calc_improper_angle(atom0, atom1, atom2, atom3))
-        print("Improper angle, before: ", calc_improper_angle(atom0, atom2, atom3, atom1))
-        print("Improper angle, before: ", calc_improper_angle(atom0, atom3, atom1, atom2))
-        print("Improper angle, after: ", calc_improper_angle(atom0, atom1, atom2, atom3_rot))
-        print("Improper angle, after: ", calc_improper_angle(atom0, atom2, atom3_rot, atom1))
-        print("Improper angle, after: ", calc_improper_angle(atom0, atom3_rot, atom1, atom2))
-
-        ## check valences
-        print("\nvalence angle 1, before: ", calc_valence_angle(atom0, atom1, atom2))
-        print("valence angle 2, before: ", calc_valence_angle(atom0, atom1, atom3))
-        print("valence angle 3, before: ", calc_valence_angle(atom0, atom2, atom3))
-        print("valence angle 1, after: ", calc_valence_angle(atom0, atom1, atom2))
-        print("valence angle 2, after: ", calc_valence_angle(atom0, atom1, atom3_rot))
-        print("valence angle 3, after: ", calc_valence_angle(atom0, atom2, atom3_rot))
-        print()
+    new_length = np.linalg.norm(atom0-atom3_rot)
 
     return atom0, atom1, atom2, atom3_rot
 
-def oemol_perturb_valence(mol, central_atom, outer_atom, theta):
-    """
-    From an OpenEye OEMol, specify the improper angle and the specific atom of
-    that improper that should be perturbed. The improper angles are obtained
-    from the find_improper_angles function in the calc_improper script.
 
-    Parameters
-    ---------
-    mol : OpenEye OEMol
-        molecule from which to generate perturbed geometry
-    central_atom : string
-        atom name in the mol which is central to the improper of interest
-        Ex., "N1"
-    outer_atom : string
-        atom name in the mol which is to be rotated
-        Ex., "N1"
-    theta : float
-        how many degrees by which to rotate
 
-    [TODO]
 
-    """
-    # todo [1]
-    # calc_improper.py: change find_improper_angles to return the name of the central atom as 5th element in crdlist
-    #  - under aidx, add something like: aname = atom.GetName()
-    #  - then update this line: crdlist.append((crd0, crd1, crd2, crd3, aname))
-    #  - update returns section in docstring
-    #  - make sure tests are still passing
 
-    # call find_improper_angle function to get coordinates for some specified improper angle
-    # todo [2]
-
-    # call perturb_valence on those coordinates
-    # todo [3]
-
-    # from the MATRIX returned by perturb_valence, update coordinates using your new function of todo [4]
-    # note: this means you probably won't need the COORDINATES returned by the perturb_valence function
-    # todo [5]
-
-    return # placeholder
-
-# todo [4]
-# write a new function to set the new coordinates back to the OEMol
-# def update_oemol_coordinates(mol, moved_atom, move_matrix)
-#   1. use the name moved_atom to get the OEAtom (atom_moved)
-#   2. loop over all atoms connected to moved_atom
-#   3. apply the move_matrix on those coordinates: something like
-#
-#       for connected_atom in ___:
-#           old_coords = connected_atom.GetCoords()
-#           connected_atom.SetCoords(np.dot(move_matrix, old_coords))
-#
-#      check the syntax though, I'm just writing pseudo-code
-#
 
 def perturb_improper(atom0, atom1, atom2, atom3, theta, verbose=False):
     """
-    [TODO] [7]
+    Rotate atom3 out of the plane of atom1, atom2  by theta degrees while keeping valence angle the same.
+
+    Parameters
+    ----------
+    atom0 : numpy array
+        CENTRAL atom coordinates
+    atom1 : numpy array
+        outer atom coordinates
+    atom2 : numpy array
+        outer atom coordinates
+    atom3 : numpy array
+        outer atom coordinates TO BE MOVED
+    theta : float
+        how many degrees by which to move atom upwards
+
+    Returns
+    -------
+    atom* : numpy arrays
+        the coordinates in the same order as given in parameters
+    rot_mat : numpy array
+        three-dimension rotation matrix, returned so that the same
+        matrix can be applied to any atoms attached to atom3.
 
     """
-    # todo [6]
-    return # placeholder
 
-# todo [8] write a test for your function
+    # get the vector between atom2 and atom1 and then rotate atom3 about that plane by angle theta.
+    v1 = atom2-atom1
+    # calculate rotation matrix
+    rot_mat = rotation_matrix(v1, theta)
+    atom3_rot = np.dot(rot_mat, atom3)
+
+    return atom0, atom1, atom2, atom3_rot
+
+
+def input2mol(xyz):
+    """
+    d e s c r i p t i o n :
+    Takes an xyz file dictionary  and converts the coordinates to an eomol.
+    Function returns a dictionary of oemols.
+
+    p a r a m e t e r s :
+    xyz: dictionary of xyz files
+
+
+    """
+    ifs = oechem.oemolistream()
+    for key, value in xyz.items():
+        ifs.open(value)
+        for mol in ifs.GetOEGraphMols():
+            xyz[key] = oechem.OEGraphMol(mol)
+    return xyz
+
+"""
+ifs = oechem.oemolistream()
+ofs = oechem.oemolostream()
+
+if ifs.open("molClass_pyrnit_molecule_1.xyz"):
+        if ofs.open("output.mol2"):
+                    for mol in ifs.GetOEGraphMols():
+                                    oechem.OEWriteMolecule(ofs, mol)
+"""
+
+def smileslist2mol(smilesList):
+    """
+    This function creates a dictionary of oemol with keys that are
+    """
+    mol = oechem.OEMol()
+    oechem.OESmilesToMol(mol, smiles)
+    oechem.OEAddExplicitHydrogens(mol)
+    omega = oeomega.OEOmega()
+    omega.SetMaxConfs(1)
+    omega(mol)
+
+
+
+def oemol_perturb(molList, angle_type, molClass, pertRange, pertIncr):
+    """
+    The function takes in a list of smiles strings, converts the smiles strings into OpenEye
+    OEMols and then performs either a valence or improper perturbation to the molecules geometry
+    by a specified angle "theta". The function creates an output .sdf file which contains all the
+    molecules from the molList and a SD tag that contains the the indices of the atoms that
+    are in the improper molecule center. The first index is the center of the improper and the last
+    index indicates the atom that was perturbed in the geometry change. The function utilizes
+    find_improper_angles from the calc_improper.py script to identify the improper locations in the molecule.
+
+    The code will iterate through each trivalent center, and perturb the centers individually in the output
+    .sdf file. The code will also generate 3 perturbed geometries for each nitrogen center where each of the
+    individual constiutuents will be perturbed individually.
+
+
+    Parameters
+    ---------
+    molList : Dictionary of oemol objects
+    angle_tyle:
+        True: Boolean
+            True = Improper perturbation
+            False = Valence perturbation
+            Ex., True
+    molClass : String
+        Type of molecules
+        Ex., pyrnitrogens
+    PertRang : Int
+        The range of degrees the attached atom will be perturbed by
+    pertIncr: Int
+        The increment of degrees that the molecule with be perturbed by
+
+    Returns
+    --------
+    .sdf file for each molecule in smiles string that perturbs the improper or valence by increments specified in specified
+    range with tags that include the frozen indices of the molecule
+
+    """
+
+    #Set perturbation type
+    if angle_type == True:
+        angle_type = perturb_improper
+        perturbation = "improper"
+    else:
+        angle_type = perturb_valence
+        perturbation = "valence"
+    #convert molList into OEMols
+    for key, mol in molList.items():
+        impCent = find_improper_angles(mol)
+        centcount = 0
+        constcount = 0
+        for center in impCent[1]:
+            for constituent in center:
+                constcount +=1
+                #determine which improper angle on the atom is of interest and store the coordinates of the improper in  various variables
+                #cmol is the parent mol which we will add conformers to
+                cmol = oechem.OEMol(mol)
+                mol_pert = str(constituent)
+                center_atom = cmol.GetAtom(oechem.OEHasAtomIdx(center[0]))
+                if constituent == center[0]:
+                    continue
+                move_atom = cmol.GetAtom(oechem.OEHasAtomIdx(constituent))
+                center_coord = np.array(cmol.GetCoords(center_atom))
+                move_coord = np.array(cmol.GetCoords(move_atom))
+
+
+                #center_coord = center[0]
+                #move_atom = constituent
+                other_coords = list()
+
+                #if constituent != center_coord:
+                #    if constituent != move_atom:
+                #        other_coords.append(constituent)
+
+
+                for neighbor in center_atom.GetAtoms():
+                    if neighbor.GetIdx() !=  constituent:
+                        new_coord = np.array(cmol.GetCoords(neighbor))
+                        other_coords.append(new_coord)
+
+                # rotate atom by desired increment, and write out each perturbation to the .sdf file
+                # DEBUGGING
+                theta = 0
+                print(pertRange)
+
+                oemol_list = [cmol]
+
+                #in the list adding tags for the indices around the nitrogen center, improver or valence move, and angle of perturbation
+                ofile = oechem.oemolostream(str(molClass) + "_" + str(key) + "_constituent_" +  mol_pert +"_" + perturbation +'.sdf')
+                count = 1
+                theta = (360 - (pertRange/2))
+                print("starting theta:" + str(theta))
+                maxRange = ((pertRange/2)+360)
+                print("Max range:" + str(maxRange))
+                pertTheta = -(pertRange/2)
+                while theta < maxRange:
+                    #move in direction of theta
+                    atom0, atom1, atom2, atom3_rot = angle_type(center_coord, other_coords[0], other_coords[1], move_coord, theta)
+                    move_mol = oechem.OEMol(oemol_list[0])
+                    move_mol.SetCoords(move_atom, oechem.OEFloatArray(atom3_rot))
+                    move_mol.SetTitle(str(molClass) + "_" + str(key) + "_constituent_" +  mol_pert +"_" + perturbation)
+                    oechem.OEAddSDData(move_mol, "Index list of atoms to freeze", str(center))
+                    oechem.OEAddSDData(move_mol, "Angle OEMol is perturbed by", str(pertTheta))
+                    oechem.OEAddSDData(move_mol, "Type of perturbation (improper or valence)", perturbation)
+                    oemol_list.append(move_mol)
+                    oechem.OEWriteConstMolecule(ofile, move_mol)
+
+                    #seperate .mol2 for each perturbation
+                    mfile = oechem.oemolostream(str(molClass) + "_" + str(key) + "_constituent_" +  mol_pert + "_" + perturbation + '_angle_'+ str(pertTheta) +'.mol2')
+                    oechem.OEWriteConstMolecule(mfile, move_mol)
+                    mfile.close()
+
+
+
+                    #count for while loop
+                    theta += pertIncr
+                    count += 1
+                    pertTheta += pertIncr
+
+
+                ofile.close()
+                print("end of loop")
+
+    return
+
+
+
 
