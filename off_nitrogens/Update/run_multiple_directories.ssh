@@ -1,0 +1,6 @@
+#!/bin/bash
+
+
+
+for i in */; do (cp one_psi.slurm ./"$i"/1); done
+for i in */ ; do (cd "$i"/1 && sbatch one_psi.slurm); done

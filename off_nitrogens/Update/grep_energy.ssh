@@ -1,0 +1,7 @@
+#!/bin/bash
+
+
+for i in */ ; do (cd "$i" && grep 'molecule' output.dat); done
+for i in */ ; do (cd "$i" && grep '@DF-RHF Final Energy:' output.dat); done
+
+

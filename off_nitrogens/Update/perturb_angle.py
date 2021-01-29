@@ -6,15 +6,11 @@
 
 """
 perturb_angle.py
-
 Perturb geometry around an improper dihedral angle. The options are:
  1. Change valence angle without changing improper
  2. Change improper angle without changing valence angles
-
 For use in generating geometries to parameterize valence and improper angles for an oemol
-
 By: Victoria Lim and Jessica Maat
-
 """
 
 #=============================================================================================
@@ -40,19 +36,16 @@ def rotation_matrix(axis, theta):
     """
     Return the rotation matrix associated with counterclockwise rotation about
     the given axis by theta radians.
-
     Parameters
     ----------
     axis : tuple, list, or numpy array
         vector normal to plane in which rotation is performed
     theta : float
         angle of rotation amount in degrees
-
     Returns
     -------
     numpy array
         three-dimension rotation matrix
-
     Reference
     ---------
     https://tinyurl.com/yam5hu78
@@ -79,7 +72,6 @@ def perturb_valence(atom0, atom1, atom2, atom3, theta, verbose=False):
     I.e., if normal vector is (0,0,1) the rotation will be counterclockwise
     looking from +z onto the xy plane. But if the normal vector is (0,0,-1)
     the rotation will be clockwise from the same viewpoint.
-
     Parameters
     ----------
     atom0 : numpy array
@@ -92,7 +84,6 @@ def perturb_valence(atom0, atom1, atom2, atom3, theta, verbose=False):
         outer atom coordinates TO BE MOVED
     theta : float
         how many degrees by which to rotate
-
     Returns
     -------
     atom* : numpy arrays
@@ -122,7 +113,6 @@ def perturb_valence(atom0, atom1, atom2, atom3, theta, verbose=False):
 def perturb_improper(atom0, atom1, atom2, atom3, theta, verbose=False):
     """
     Rotate atom3 out of the plane of atom1, atom2  by theta degrees while keeping valence angle the same.
-
     Parameters
     ----------
     atom0 : numpy array
@@ -135,7 +125,6 @@ def perturb_improper(atom0, atom1, atom2, atom3, theta, verbose=False):
         outer atom coordinates TO BE MOVED
     theta : float
         how many degrees by which to move atom upwards
-
     Returns
     -------
     atom* : numpy arrays
@@ -143,7 +132,6 @@ def perturb_improper(atom0, atom1, atom2, atom3, theta, verbose=False):
     rot_mat : numpy array
         three-dimension rotation matrix, returned so that the same
         matrix can be applied to any atoms attached to atom3.
-
     """
 
     # get the vector between atom2 and atom1 and then rotate atom3 about that plane by angle theta.
@@ -160,11 +148,8 @@ def input2mol(xyz):
     d e s c r i p t i o n :
     Takes an xyz file dictionary  and converts the coordinates to an eomol.
     Function returns a dictionary of oemols.
-
     p a r a m e t e r s :
     xyz: dictionary of xyz files
-
-
     """
     ifs = oechem.oemolistream()
     for key, value in xyz.items():
@@ -176,7 +161,6 @@ def input2mol(xyz):
 """
 ifs = oechem.oemolistream()
 ofs = oechem.oemolostream()
-
 if ifs.open("molClass_pyrnit_molecule_1.xyz"):
         if ofs.open("output.mol2"):
                     for mol in ifs.GetOEGraphMols():
@@ -205,12 +189,9 @@ def oemol_perturb(molList, angle_type, molClass, pertRange, pertIncr):
     are in the improper molecule center. The first index is the center of the improper and the last
     index indicates the atom that was perturbed in the geometry change. The function utilizes
     find_improper_angles from the calc_improper.py script to identify the improper locations in the molecule.
-
     The code will iterate through each trivalent center, and perturb the centers individually in the output
     .sdf file. The code will also generate 3 perturbed geometries for each nitrogen center where each of the
     individual constiutuents will be perturbed individually.
-
-
     Parameters
     ---------
     molList : Dictionary of oemol objects
@@ -226,12 +207,10 @@ def oemol_perturb(molList, angle_type, molClass, pertRange, pertIncr):
         The range of degrees the attached atom will be perturbed by
     pertIncr: Int
         The increment of degrees that the molecule with be perturbed by
-
     Returns
     --------
     .sdf file for each molecule in smiles string that perturbs the improper or valence by increments specified in specified
     range with tags that include the frozen indices of the molecule
-
     """
 
     #Set perturbation type
@@ -319,7 +298,4 @@ def oemol_perturb(molList, angle_type, molClass, pertRange, pertIncr):
                 print("end of loop")
 
     return
-
-
-
 
